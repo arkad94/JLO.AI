@@ -64,13 +64,41 @@ def clear_screen():
     # Print the logo with yellow color using the Fore module from colorama.
     print(f"{Fore.YELLOW}{logo}{Style.RESET_ALL}")
 
+# Other imports and definitions remain the same
+
+# Mock OpenAI Client
+class MockOpenAIClient:
+    def chat(self):
+        return self
+
+    def create(self, messages):
+        mock_responses = {
+            "Word of The Day in Japanese": "Mock response for Word of The Day in Japanese",
+            "A Story": "Mock response for A Story"
+        }
+        prompt = messages[0]["content"]
+        for key, value in mock_responses.items():
+            if key in prompt:
+                return {'choices': [{'message': {'content': value}}]}
+        return {'choices': [{'message': {'content': "Default mock response"}}]}
+
+# Create a mock client instance
+client = MockOpenAIClient()
+
 def handle_prompter():
     session = PromptSession()
-    CMD = session.prompt(f"{Fore.BLUE}Enter CMD: {Style.RESET_ALL}", completer=WordCompleter(['command1', 'command2', 'command3']))
+    CMD = session.prompt(f"{Fore.BLUE}Enter CMD: {Style.RESET_ALL}")
     Tag = session.prompt(f"{Fore.BLUE}Enter Tag: {Style.RESET_ALL}")
     SPINS = session.prompt(f"{Fore.BLUE}Enter SPINS: {Style.RESET_ALL}")
 
-    prompt = create_prompt(CMD, Tag, SPINS)
+    final_prompt = create_prompt(CMD, Tag, SPINS)
+    chat_completion = client.chat().create(
+        messages=[{"role": "user", "content": final_prompt}],
+        )
+    print(f"{Fore.YELLOW}Mock Response: {chat_completion['choices'][0]['message']['content']}{Style.RESET_ALL}")
+
+
+
     
 
    
