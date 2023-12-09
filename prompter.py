@@ -1,5 +1,7 @@
 import os
-import openai
+from openai import OpenAI
+
+client = OpenAI()
 
 # Initialize OpenAI client with your API key
 api_key = os.getenv("OPENAI_API_KEY")
@@ -31,9 +33,7 @@ def send_prompt_to_openai(CMD, tag, SPINS):
         messages = [{"role": "user", "content": final_prompt}]
 
         # Use the openai.Completion.create method
-        response = openai.Completion.create(
-            model="gpt-3.5-turbo", prompt=final_prompt, max_tokens=150
-        )
+        response = client.completions.create(model="gpt-3.5-turbo", prompt=final_prompt, max_tokens=150)
 
         # Extract the text from the response
         text_response = response.choices[0].text.strip()
