@@ -25,6 +25,8 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///jlo_ai.db'
 app.config['TEMPLATES_AUTO_RELOAD'] = True
 db.init_app(app)
 
+tasks = {}
+
 oauth = OAuth(app)
 
 oauth.register(
