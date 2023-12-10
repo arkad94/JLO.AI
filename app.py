@@ -4,6 +4,8 @@ from dotenv import load_dotenv, find_dotenv
 from db_operations import add_user, get_users, update_user, delete_user, add_word, get_words, update_word, delete_word
 from prompter import send_prompt_to_openai 
 from authlib.integrations.flask_client import OAuth
+import aiohttp
+import asyncio
 import os
 from os import environ as env
 import json
@@ -16,14 +18,6 @@ import uuid
 ENV_FILE = find_dotenv()
 if ENV_FILE:
     load_dotenv(ENV_FILE)
-
-tasks = {}
-
-def process_openai_api(CMD, tag, SPINS, task_id):
-    # Simulate processing (replace with actual OpenAI API call)
-    response, difficult_words = send_prompt_to_openai(CMD, tag, SPINS)
-    tasks[task_id] = {'text_response': response, 'difficult_words': difficult_words}
-
 
 app = Flask(__name__)
 app.secret_key = env.get("APP_SECRET_KEY")
@@ -42,6 +36,30 @@ oauth.register(
     },
     server_metadata_url=f'https://{env.get("AUTH0_DOMAIN")}/.well-known/openid-configuration'
 )
+
+async def fetch_openai_response(session, url, headers, data):
+    async with session.post(url, headers=headers, data=data) as response:
+        return await response.json()
+
+async def process_openai_api(CMD, tag, SPINS, task_id):
+    final_prompt, valid_cmd = create_prompt(CMD, tag, SPINS)
+    if valid_cmd:
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json"
+        }
+
+        data = {
+            "model": "gpt-3.5-turbo",
+            "messages": [{"role": "user", "content": final_prompt}]
+        }
+
+        async with aiohttp.ClientSession() as session:
+            response_data = await fetch_openai_response(session, "https://api.openai.com/v1/chat/completions", headers, json.dumps(data))
+            text_response = response_data['choices'][0]['message']['content'].strip()
+            difficult_words = extract_difficult_words(text_response)
+            tasks[task_id] = {'text_response': text_response, 'difficult_words': difficult_words}
+
 
 
 @app.route("/login")
