@@ -99,18 +99,7 @@ def home():
 app.jinja_env.cache = {}
 
 
-@app.route('/get_prompt_results', methods=['POST'])
-def get_prompt_results():
-    data = request.get_json()
-    CMD = data['CMD']
-    tag = data['tag']
-    SPINS = data['SPINS']
 
-    task_id = str(uuid.uuid4())  # Generate a unique task ID
-    thread = Thread(target=process_openai_api, args=(CMD, tag, SPINS, task_id))
-    thread.start()
-
-    return jsonify({'task_id': task_id})
 
 @app.route('/check_task_status', methods=['GET'])
 def check_task_status():
