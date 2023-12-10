@@ -57,6 +57,7 @@ def get_prompt_results():
 
 
 
+
 @app.route("/login")
 def login():
     return oauth.auth0.authorize_redirect(
