@@ -1,3 +1,4 @@
+import logging
 from flask import Flask, render_template, request, jsonify, redirect, url_for, session
 from models import db, User, Word
 from dotenv import load_dotenv, find_dotenv
@@ -13,6 +14,8 @@ from urllib.parse import urlencode
 from threading import Thread
 import uuid
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 ENV_FILE = find_dotenv()
@@ -61,6 +64,7 @@ async def process_openai_api(CMD, tag, SPINS, task_id):
             text_response = response_data['choices'][0]['message']['content'].strip()
             difficult_words = extract_difficult_words(text_response)
             tasks[task_id] = {'text_response': text_response, 'difficult_words': difficult_words}
+
 
 
 
