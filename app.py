@@ -45,6 +45,28 @@ oauth.register(
 async def fetch_openai_response(session, url, headers, data):
     async with session.post(url, headers=headers, data=data) as response:
         return await response.json()
+async def process_openai_api(CMD, tag, SPINS, task_id):
+    final_prompt, valid_cmd = create_prompt(CMD, tag, SPINS)
+    if valid_cmd:
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json"
+        }
+
+        data = {
+            "model": "gpt-3.5-turbo",
+            "messages": [{"role": "user", "content": final_prompt}]
+        }
+
+        logger.info("Sending request to OpenAI API")
+        try:
+            async with aiohttp.ClientSession() as session:
+                response_data = await fetch_openai_response(session, "https://api.openai.com/v1/chat/completions", headers, json.dumps(data))
+                # ...
+                logger.info(f"Received response from OpenAI API: {response_data}")
+        except Exception as e:
+            logger.error(f"Error in OpenAI API call: {e}")
+
 
 async def process_openai_api(CMD, tag, SPINS, task_id):
     final_prompt, valid_cmd = create_prompt(CMD, tag, SPINS)
