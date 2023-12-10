@@ -43,25 +43,25 @@
         }
         
         function pollTaskStatus(taskId) {
-            $.ajax({
-                url: '/check_task_status/' + taskId,
-                type: 'GET',
-                success: function(taskStatusResponse) {
-                    if (taskStatusResponse.status === 'completed') {
-                        displayResults(taskStatusResponse);
-                    } else {
-                        // Repeat polling after a delay
-                        setTimeout(function() {
-                            pollTaskStatus(taskId);
-                        }, 2000); // Poll every 2 seconds
-                    }
-                },
-                error: function(error) {
-                    console.log(error);
-                }
-            });
+    $.ajax({
+        url: '/check_task_status?task_id=' + taskId,
+        type: 'GET',
+        success: function(taskStatusResponse) {
+            if (taskStatusResponse.status === 'completed') {
+                displayResults(taskStatusResponse);
+            } else {
+                // Repeat polling after a delay
+                setTimeout(function() {
+                    pollTaskStatus(taskId);
+                }, 2000); // Poll every 2 seconds
+            }
+        },
+        error: function(error) {
+            console.log(error);
         }
-        
+    });
+}
+
         function displayResults(response) {
             // Update the DOM with response data
             var resultHtml = "<h1>Response from OpenAI</h1><p>" + response.text_response + "</p>";
