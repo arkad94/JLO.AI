@@ -1,4 +1,5 @@
 import logging
+import threading
 from flask import Flask, render_template, request, jsonify, redirect, url_for, session
 from models import db, User, Word
 from dotenv import load_dotenv, find_dotenv
@@ -42,6 +43,15 @@ async def process_openai_api(CMD, tag, SPINS, task_id):
     text_response, difficult_words = await send_prompt_to_openai(CMD, tag, SPINS)
     tasks[task_id] = {'text_response': text_response, 'difficult_words': difficult_words}
 
+def start_async_task(coro):
+    """
+    Starts an asyncio event loop and runs the given coroutine.
+    """
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    loop.run_until_complete(coro)
+    loop.close()
+
 @app.route('/get_prompt_results', methods=['POST'])
 def get_prompt_results():
     data = request.get_json()
@@ -50,7 +60,10 @@ def get_prompt_results():
     SPINS = data['SPINS']
 
     task_id = str(uuid.uuid4())
-    asyncio.create_task(process_openai_api(CMD, tag, SPINS, task_id))
+
+    # Start a new thread to run the async function
+    thread = threading.Thread(target=start_async_task, args=(process_openai_api(CMD, tag, SPINS, task_id),))
+    thread.start()
 
     return jsonify({'task_id': task_id})
 
