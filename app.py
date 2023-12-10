@@ -5,18 +5,15 @@ from dotenv import load_dotenv, find_dotenv
 from db_operations import add_user, get_users, update_user, delete_user, add_word, get_words, update_word, delete_word
 from prompter import send_prompt_to_openai 
 from authlib.integrations.flask_client import OAuth
-import aiohttp
 import asyncio
 import os
 from os import environ as env
 import json
 from urllib.parse import urlencode
-from threading import Thread
 import uuid
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
 
 ENV_FILE = find_dotenv()
 if ENV_FILE:
@@ -31,7 +28,6 @@ db.init_app(app)
 tasks = {}
 
 oauth = OAuth(app)
-
 oauth.register(
     "auth0",
     client_id=env.get("AUTH0_CLIENT_ID"),
@@ -42,50 +38,21 @@ oauth.register(
     server_metadata_url=f'https://{env.get("AUTH0_DOMAIN")}/.well-known/openid-configuration'
 )
 
-async def fetch_openai_response(session, url, headers, data):
-    async with session.post(url, headers=headers, data=data) as response:
-        return await response.json()
 async def process_openai_api(CMD, tag, SPINS, task_id):
-    final_prompt, valid_cmd = create_prompt(CMD, tag, SPINS)
-    if valid_cmd:
-        headers = {
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json"
-        }
+    text_response, difficult_words = await send_prompt_to_openai(CMD, tag, SPINS)
+    tasks[task_id] = {'text_response': text_response, 'difficult_words': difficult_words}
 
-        data = {
-            "model": "gpt-3.5-turbo",
-            "messages": [{"role": "user", "content": final_prompt}]
-        }
+@app.route('/get_prompt_results', methods=['POST'])
+def get_prompt_results():
+    data = request.get_json()
+    CMD = data['CMD']
+    tag = data['tag']
+    SPINS = data['SPINS']
 
-        logger.info("Sending request to OpenAI API")
-        try:
-            async with aiohttp.ClientSession() as session:
-                response_data = await fetch_openai_response(session, "https://api.openai.com/v1/chat/completions", headers, json.dumps(data))
-                # ...
-                logger.info(f"Received response from OpenAI API: {response_data}")
-        except Exception as e:
-            logger.error(f"Error in OpenAI API call: {e}")
+    task_id = str(uuid.uuid4())
+    asyncio.create_task(process_openai_api(CMD, tag, SPINS, task_id))
 
-
-async def process_openai_api(CMD, tag, SPINS, task_id):
-    final_prompt, valid_cmd = create_prompt(CMD, tag, SPINS)
-    if valid_cmd:
-        headers = {
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json"
-        }
-
-        data = {
-            "model": "gpt-3.5-turbo",
-            "messages": [{"role": "user", "content": final_prompt}]
-        }
-
-        async with aiohttp.ClientSession() as session:
-            response_data = await fetch_openai_response(session, "https://api.openai.com/v1/chat/completions", headers, json.dumps(data))
-            text_response = response_data['choices'][0]['message']['content'].strip()
-            difficult_words = extract_difficult_words(text_response)
-            tasks[task_id] = {'text_response': text_response, 'difficult_words': difficult_words}
+    return jsonify({'task_id': task_id})
 
 
 
