@@ -1,74 +1,44 @@
-import logging
-import threading
-from flask import Flask, render_template, request, jsonify, redirect, url_for, session
+from flask import Flask, render_template, request, jsonify, redirect, url_for, session, redirect
 from models import db, User, Word
-from dotenv import load_dotenv, find_dotenv
 from db_operations import add_user, get_users, update_user, delete_user, add_word, get_words, update_word, delete_word
-from prompter import send_prompt_to_openai 
+from prompter import send_prompt_to_openai
+from models import  User, Word
 from authlib.integrations.flask_client import OAuth
-import asyncio
+from six.moves.urllib.parse import urlencode
+from functools import wraps
 import os
 from os import environ as env
 import json
-from urllib.parse import urlencode
-import uuid
+from urllib.parse import quote_plus, urlencode
+from authlib.integrations.flask_client import OAuth
+from dotenv import find_dotenv, load_dotenv
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
+# Load environment variables
 ENV_FILE = find_dotenv()
 if ENV_FILE:
     load_dotenv(ENV_FILE)
 
+
 app = Flask(__name__)
-app.secret_key = env.get("APP_SECRET_KEY")
+app.config['SECRET_KEY'] = os.environ.get("APP_SECRET_KEY")
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///jlo_ai.db'
 app.config['TEMPLATES_AUTO_RELOAD'] = True
+socketio = SocketIO(app, async_mode='gevent')
+
 db.init_app(app)
 
 tasks = {}
 
+
+# Setup OAuth
 oauth = OAuth(app)
 oauth.register(
     "auth0",
-    client_id=env.get("AUTH0_CLIENT_ID"),
-    client_secret=env.get("AUTH0_CLIENT_SECRET"),
-    client_kwargs={
-        "scope": "openid profile email",
-    },
-    server_metadata_url=f'https://{env.get("AUTH0_DOMAIN")}/.well-known/openid-configuration'
+    client_id=os.environ.get("AUTH0_CLIENT_ID"),
+    client_secret=os.environ.get("AUTH0_CLIENT_SECRET"),
+    client_kwargs={"scope": "openid profile email"},
+    server_metadata_url=f'https://{os.environ.get("AUTH0_DOMAIN")}/.well-known/openid-configuration'
 )
-
-async def process_openai_api(CMD, tag, SPINS, task_id):
-    text_response, difficult_words = await send_prompt_to_openai(CMD, tag, SPINS)
-    tasks[task_id] = {'text_response': text_response, 'difficult_words': difficult_words}
-
-def start_async_task(coro):
-    """
-    Starts an asyncio event loop and runs the given coroutine.
-    """
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    loop.run_until_complete(coro)
-    loop.close()
-
-@app.route('/get_prompt_results', methods=['POST'])
-def get_prompt_results():
-    data = request.get_json()
-    CMD = data['CMD']
-    tag = data['tag']
-    SPINS = data['SPINS']
-
-    task_id = str(uuid.uuid4())
-
-    # Start a new thread to run the async function
-    thread = threading.Thread(target=start_async_task, args=(process_openai_api(CMD, tag, SPINS, task_id),))
-    thread.start()
-
-    return jsonify({'task_id': task_id})
-
-
-
 
 
 @app.route("/login")
@@ -80,8 +50,13 @@ def login():
 @app.route("/callback", methods=["GET", "POST"])
 def callback():
     token = oauth.auth0.authorize_access_token()
-    session["user"] = token
+    userinfo_url = f'https://{os.environ.get("AUTH0_DOMAIN")}/userinfo'
+    resp = oauth.auth0.get(userinfo_url)
+    userinfo = resp.json()
+    session['user'] = userinfo
     return redirect("/")
+
+
 
 @app.route("/logout")
 def logout():
@@ -112,25 +87,42 @@ def home():
 app.jinja_env.cache = {}
 
 
+@app.route('/get_prompt_results', methods=['POST'])
+def get_prompt_results():
+    data = request.get_json()
+    CMD = data['CMD']
+    tag = data['tag']
+    SPINS = data['SPINS']
+    
+    # Call your existing function to get the response and difficult words
+    response, difficult_words = send_prompt_to_openai(CMD, tag, SPINS)
+    
+    return jsonify({'text_response': response, 'difficult_words': difficult_words})
 
-
-@app.route('/check_task_status', methods=['GET'])
-def check_task_status():
-    task_id = request.args.get('task_id')
-    result = tasks.get(task_id)
-    if result:
-        return jsonify(result)
-    else:
-        return jsonify({'status': 'processing'})
 
 @app.route('/prompter', methods=['GET'])
 def prompter():
     # Render the prompter form
     return render_template('prompter_form.html')
 
-    
- 
-                           
+@socketio.on('send_prompt')
+def handle_send_prompt(data):
+    CMD = data['CMD']
+    tag = data['tag']
+    SPINS = data['SPINS']
+
+    # Emit a message that the request is being processed
+    emit('update', {'message': 'Processing your request...'})
+
+    # Stream the prompt to OpenAI and iterate over the responses
+    for delta_content in send_prompt_to_openai(CMD, tag, SPINS, stream=True):
+        # Emit each chunk of text
+        emit('text_chunk', {'chunk': delta_content})
+
+    # Emit a message indicating the end of the stream
+    emit('stream_end', {'message': 'Completion received'})
+
+
 
 @app.route('/add_user', methods=['GET', 'POST'])
 def route_add_user():
@@ -200,4 +192,11 @@ def create_db():
     print("Database tables created.")
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), debug=True)
+    from gevent.pywsgi import WSGIServer
+    from geventwebsocket.handler import WebSocketHandler
+
+    # Get port number from the environment variable (Heroku sets it), or set to 5000
+    port = int(os.environ.get('PORT', 5000))
+
+    http_server = WSGIServer(('', port), app, handler_class=WebSocketHandler)
+    http_server.serve_forever()

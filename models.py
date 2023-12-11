@@ -1,13 +1,14 @@
 # Import the necessary components from the SQLAlchemy library, which is a toolkit for SQL database interaction.
-from flask_sqlalchemy import SQLAlchemy
+
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from sqlalchemy import Table, Column, Integer, ForeignKey
+from dbextension import db
 import datetime
 
 # Create an instance of the SQLAlchemy class.
 # This object will be used to interact with the database.
-db = SQLAlchemy()
+
 
 # Define an association table for a many-to-many relationship between Words and Tags.
 # This is needed because a word can have many tags and a tag can be associated with many words.

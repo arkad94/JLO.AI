@@ -1,8 +1,11 @@
 <!-- templates/create_prompt.html -->
 
 <head>
-    <!-- Include jQuery -->
+    <!-- Make sure to include jQuery if it's not already included -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+    <!-- Add Socket.IO JavaScript client -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
 </head>
 
 <body>
@@ -16,61 +19,32 @@
         <label for="SPINS">SPINS:</label>
         <input type="text" id="SPINS" name="SPINS">
         
-        <input type="button" value="Submit" onclick="getPromptResults()">
+        <input type="button" value="Submit" onclick="sendPromptData()">
     </form>
 
     <div id="results"></div>
 
     <script>
-        function getPromptResults() {
-            var cmd = $("#CMD").val();
+        var socket = io();
+    
+        function sendPromptData() {
+            var CMD = $("#CMD").val();
             var tag = $("#tag").val();
-            var spins = $("#SPINS").val();
-        
-            $.ajax({
-                url: '/get_prompt_results',
-                type: 'POST',
-                contentType: 'application/json',
-                data: JSON.stringify({ 'CMD': cmd, 'tag': tag, 'SPINS': spins }),
-                success: function(taskResponse) {
-                    // Start polling for task completion
-                    pollTaskStatus(taskResponse.task_id);
-                },
-                error: function(error) {
-                    console.log(error);
-                }
-            });
+            var SPINS = $("#SPINS").val();
+            $("#results").html(""); // Clear previous results
+            socket.emit('send_prompt', {CMD: CMD, tag: tag, SPINS: SPINS});
         }
-        
-        function pollTaskStatus(taskId) {
-    $.ajax({
-        url: '/check_task_status?task_id=' + taskId,
-        type: 'GET',
-        success: function(taskStatusResponse) {
-            if (taskStatusResponse.status === 'completed') {
-                displayResults(taskStatusResponse);
-            } else {
-                // Repeat polling after a delay
-                setTimeout(function() {
-                    pollTaskStatus(taskId);
-                }, 2000); // Poll every 2 seconds
-            }
-        },
-        error: function(error) {
-            console.log(error);
-        }
-    });
-}
-
-        function displayResults(response) {
-            // Update the DOM with response data
-            var resultHtml = "<h1>Response from OpenAI</h1><p>" + response.text_response + "</p>";
-            resultHtml += "<h2>Difficult Words</h2><ul>";
-            response.difficult_words.forEach(function(word) {
-                resultHtml += "<li>" + word[0] + " - " + word[1] + "</li>";
-            });
-            resultHtml += "</ul>";
-            $("#results").html(resultHtml);
-        }
+    
+        socket.on('update', function(data) {
+            $("#results").append("<p>" + data.message + "</p>"); // Append update messages
+        });
+    
+        socket.on('text_chunk', function(data) {
+            $("#results").append(data.chunk); // Append each chunk of text
+        });
+    
+        socket.on('stream_end', function(data) {
+            $("#results").append("<p>" + data.message + "</p>"); // Append the end message
+        });
     </script>
-</body>
+    

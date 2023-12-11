@@ -31,7 +31,11 @@ def create_prompt(CMD, tag, SPINS):
     return final_prompt, CMD in cmd_templates
 
 
+<<<<<<< HEAD
 async def send_prompt_to_openai(CMD, tag, SPINS):
+=======
+def send_prompt_to_openai(CMD, tag, SPINS, stream=False):
+>>>>>>> JLO.AIWebStreamA
     final_prompt, valid_cmd = create_prompt(CMD, tag, SPINS)
     if valid_cmd:
         headers = {
@@ -41,7 +45,8 @@ async def send_prompt_to_openai(CMD, tag, SPINS):
 
         data = {
             "model": "gpt-3.5-turbo",
-            "messages": [{"role": "user", "content": final_prompt}]
+            "messages": [{"role": "user", "content": final_prompt}],
+            "stream": stream  # Enable streaming if required
         }
 
         async with aiohttp.ClientSession() as session:
@@ -55,8 +60,47 @@ async def send_prompt_to_openai(CMD, tag, SPINS):
                     print("Error:", response.status, await response.text())
                     return "", []
 
+<<<<<<< HEAD
 # Example use
 # asyncio.run(send_prompt_to_openai("Word of The Day in Japanese", "", ""))
+=======
+        if response.status_code == 200:
+            if not stream:
+                # For non-streaming responses
+                response_data = response.json()
+                text_response = response_data['choices'][0]['message']['content'].strip()
+                difficult_words = extract_difficult_words(text_response)
+                return text_response, difficult_words
+            else:
+                # Handling for streamed responses
+                try:
+                    for line in response.iter_lines():
+                        if line:
+                            line_str = line.decode('utf-8').strip()
+                            print("Received line:", line_str)  # Debugging statement
+                            # Check if the line starts with 'data: '
+                            if line_str.startswith('data: '):
+                                json_str = line_str[6:]  # Strip off 'data: ' to get the JSON part
+                                try:
+                                    streamed_response = json.loads(json_str)
+                                    if 'choices' in streamed_response and 'delta' in streamed_response['choices'][0]:
+                                        delta_content = streamed_response['choices'][0]['delta'].get('content', '')
+                                        yield delta_content  # Yield the chunk for streaming
+                                except json.JSONDecodeError as e:
+                                    print("Error in decoding JSON after stripping 'data: ':", e)
+                            else:
+                                print("Line did not start with 'data: '", line_str)
+                except json.JSONDecodeError as e:
+                    print("JSON decoding failed. The line received was not valid JSON:", line_str)
+                    print("Error message:", str(e))
+        else:
+            print("Error:", response.status_code, response.text)
+            return "", []
+
+    return "", []
+>>>>>>> JLO.AIWebStreamA
+
+
 
 
 

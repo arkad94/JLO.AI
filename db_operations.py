@@ -1,5 +1,7 @@
 # db_operations.py
-from models import db, User, Word, Tag, ChangeLog, Report
+from dbextension import db
+from models import  User, Word
+#Tag, ChangeLog, Report
 from sqlalchemy.exc import SQLAlchemyError
 
 # User CRUD Operations
