@@ -89,27 +89,20 @@ def prompter():
 
 from flask_socketio import emit
 
-@socketio.on('send_prompt')
+
 @socketio.on('send_prompt')
 def handle_send_prompt(data):
     CMD = data['CMD']
     tag = data['tag']
     SPINS = data['SPINS']
 
+    # Stream the response from OpenAI API to the client
     send_prompt_to_openai(CMD, tag, SPINS, socketio, request.sid)
 
-    japanese_story, english_summary, difficult_words = process_text(story)
+    # Temporarily disabled processing and image generation
+    # TODO: Handle processing and image generation based on the complete text
+    # received on the frontend
 
-    # Generate image with DALL-E using the English summary
-    image_url = generate_image_with_dalle(english_summary)
-
-    # Emit the separated story parts and image URL
-    emit('prompt_response', {
-        'japanese_story': japanese_story,
-        'english_summary': english_summary,
-        'difficult_words': difficult_words,
-        'image_url': image_url
-    })
 
 
 
