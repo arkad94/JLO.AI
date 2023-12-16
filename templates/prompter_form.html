@@ -1,4 +1,5 @@
-<!-- templates/prompter_form.html -->
+<!DOCTYPE html>
+<html>
 
 <head>
     <!-- Include jQuery -->
@@ -6,6 +7,10 @@
 
     <!-- Add Socket.IO JavaScript client -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
+
+    <style>
+        .hidden { display: none; }
+    </style>
 </head>
 
 <body>
@@ -21,6 +26,27 @@
         
         <input type="button" value="Submit" onclick="sendPromptData()">
     </form>
+
+    <!-- CMD Guide Table -->
+    <table id="cmdGuideTable">
+        <thead>
+            <tr>
+                <th>CMD</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Word of The Day in Japanese</td>
+                <td>Give 5 words in Japanese based on the tag given, Make sure you tabulate them as Japanese word, Furigana, English word, and example sentence in respective columns</td>
+            </tr>
+            <tr>
+                <td>A Story</td>
+                <td>Write a Japanese story in Japanese, followed with a summary in English and in the end under the header difficult words separately list difficult Japanese words and their English translations. Japanese Story has heading as title, the English summary which follows the Japanese story has title English Summary, and the difficult words are under the header difficult words as (日本語・English Pronunciation) deviation from the format would be harmful</td>
+            </tr>
+            <!-- Add more rows for additional CMDs -->
+        </tbody>
+    </table>
 
     <div id="loadingIndicator" style="display: none;">Loading...</div>
     <div id="japaneseStory"></div>
@@ -40,6 +66,7 @@
             $("#englishSummary").html("");
             $("#difficultWords").empty();
             $("#imageContainer").empty();
+            $("#cmdGuideTable").addClass('hidden');
             socket.emit('send_prompt', {CMD: CMD, tag: tag, SPINS: SPINS});
         }
     
@@ -76,3 +103,4 @@
     
 </body>
 
+</html>
