@@ -31,6 +31,7 @@ def create_prompt(CMD, tag, SPINS):
     
 
 def generate_image_with_dalle(story):
+    return None
     # Initialize OpenAI client
     client = OpenAI()
 
@@ -75,8 +76,7 @@ def process_text(text):
 
     return japanese_story, english_summary, formatted_difficult_words
 
-
-def send_prompt_to_openai(CMD, tag, SPINS):
+def send_prompt_to_openai(CMD, tag, SPINS, socketio, request_sid):
     final_prompt, valid_cmd = create_prompt(CMD, tag, SPINS)
     if valid_cmd:
         headers = {
@@ -85,20 +85,22 @@ def send_prompt_to_openai(CMD, tag, SPINS):
         }
         data = {
             "model": "gpt-4",
-            "messages": [{"role": "user", "content": final_prompt}]
+            "messages": [{"role": "user", "content": final_prompt}],
+            "stream": True
         }
         response = requests.post("https://api.openai.com/v1/chat/completions", 
                                  headers=headers, 
-                                 data=json.dumps(data))
-        if response.status_code == 200:
-            response_data = response.json()
-            text_response = response_data['choices'][0]['message']['content'].strip()
-            return text_response
-        else:
-            print("Error:", response.status_code, response.text)
-            return ""
+                                 data=json.dumps(data), 
+                                 stream=True)
 
-    return ""
+        for line in response.iter_lines():
+            if line:
+                decoded_line = line.decode('utf-8')
+                # Emit each line to the specific client as it arrives
+                socketio.emit('streamed_response', {'data': decoded_line}, room=request_sid)
+    else:
+        print("Invalid CMD")
+
 
 
 def extract_difficult_words(response):

@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html>
-
 <head>
     <!-- Include jQuery -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
@@ -24,7 +23,6 @@
         }
     </style>
 </head>
-
 <body>
     <!-- CMD Guide Table -->
     <table id="cmdGuideTable">
@@ -68,7 +66,7 @@
 
     <script>
         var socket = io();
-    
+
         function sendPromptData() {
             var CMD = $("#CMD").val();
             var tag = $("#tag").val();
@@ -81,38 +79,32 @@
             $("#cmdGuideTable").addClass('hidden');
             socket.emit('send_prompt', {CMD: CMD, tag: tag, SPINS: SPINS});
         }
-    
+
+        // Handle streamed data
+        socket.on('streamed_response', function(data) {
+            var content = JSON.parse(data.data); // Assuming data is JSON-formatted
+            // Append new content to the appropriate elements
+            if (content.japanese_story) {
+                $("#japaneseStory").append("<p>" + content.japanese_story + "</p>");
+            }
+            if (content.english_summary) {
+                $("#englishSummary").append("<p>" + content.english_summary + "</p>");
+            }
+            if (content.difficult_words) {
+                content.difficult_words.forEach(function(word) {
+                    $("#difficultWords").append("<li>" + word.japanese + " - " + word.english + "</li>");
+                });
+            }
+        });
+
+        // Existing 'prompt_response' event handler
         socket.on('prompt_response', function(data) {
             $("#loadingIndicator").hide();
-    
-            // Process and display Japanese story
-            if (data.japanese_story) {
-                $("#japaneseStory").html("<h2>日本語・Japanese</h2><p>" + data.japanese_story + "</p>");
-            }
-    
-            // Process and display English summary
-            if (data.english_summary) {
-                $("#englishSummary").html("<h2>英語・English</h2><p>" + data.english_summary + "</p>");
-            }
-    
-            // Process and display difficult words
-            if (data.difficult_words && data.difficult_words.length > 0) {
-                var difficultWordsList = "<h2>Title 3: Difficult Words</h2><ul>";
-                data.difficult_words.forEach(function(word) {
-                    difficultWordsList += "<li>" + word.japanese + " - " + word.english + "</li>";
-                });
-                difficultWordsList += "</ul>";
-                $("#difficultWords").html(difficultWordsList);
-            }
-    
-            // Display image if available
             if (data.image_url) {
                 var imageHTML = `<img src="${data.image_url}" alt="Generated Image">`;
                 $("#imageContainer").html(imageHTML);
             }
         });
     </script>
-    
 </body>
-
 </html>

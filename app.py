@@ -90,13 +90,14 @@ def prompter():
 from flask_socketio import emit
 
 @socketio.on('send_prompt')
+@socketio.on('send_prompt')
 def handle_send_prompt(data):
     CMD = data['CMD']
     tag = data['tag']
     SPINS = data['SPINS']
 
-    # Get the story and process it to extract different parts
-    story = send_prompt_to_openai(CMD, tag, SPINS)
+    send_prompt_to_openai(CMD, tag, SPINS, socketio, request.sid)
+
     japanese_story, english_summary, difficult_words = process_text(story)
 
     # Generate image with DALL-E using the English summary
