@@ -79,25 +79,21 @@ def process_text(text):
 def send_prompt_to_openai(CMD, tag, SPINS, socketio, request_sid):
     final_prompt, valid_cmd = create_prompt(CMD, tag, SPINS)
     if valid_cmd:
-        headers = {
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json"
-        }
-        data = {
-            "model": "gpt-4",
-            "messages": [{"role": "user", "content": final_prompt}],
-            "stream": True
-        }
-        response = requests.post("https://api.openai.com/v1/chat/completions", 
-                                 headers=headers, 
-                                 data=json.dumps(data), 
-                                 stream=True)
+        try:
+            # Sending the streaming request to OpenAI
+            response = openai.ChatCompletion.create(
+                model="gpt-4",
+                messages=[{"role": "user", "content": final_prompt}],
+                stream=True
+            )
 
-        for line in response.iter_lines():
-            if line:
-                decoded_line = line.decode('utf-8')
-                # Emit each line to the specific client as it arrives
-                socketio.emit('streamed_response', {'data': decoded_line}, room=request_sid)
+            # Iterate over each chunk in the streamed response
+            for chunk in response:
+                # Emit each chunk to the specific client as it arrives
+                socketio.emit('streamed_response', {'data': chunk}, room=request_sid)
+
+        except Exception as e:
+            print(f"Error in streaming response: {e}")
     else:
         print("Invalid CMD")
 

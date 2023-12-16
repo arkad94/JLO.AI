@@ -1,50 +1,15 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <!-- Include jQuery -->
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <!-- ... Other head elements ... -->
 
-    <!-- Add Socket.IO JavaScript client -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
 
-    <style>
-        .hidden { display: none; }
-        #cmdGuideTable, #cmdGuideTable th, #cmdGuideTable td {
-            border: 1px solid black;
-            border-collapse: collapse;
-        }
-        #cmdGuideTable {
-            width: 100%;
-            margin-bottom: 20px;
-        }
-        #cmdGuideTable th, #cmdGuideTable td {
-            padding: 5px;
-            text-align: left;
-        }
-    </style>
+    <!-- ... Styles ... -->
 </head>
 <body>
-    <!-- CMD Guide Table -->
-    <!-- ... (same as before) ... -->
-
-    <form id="promptForm">
-        <label for="CMD">CMD:</label>
-        <input type="text" id="CMD" name="CMD">
-        
-        <label for="tag">Tag:</label>
-        <input type="text" id="tag" name="tag">
-        
-        <label for="SPINS">SPINS:</label>
-        <input type="text" id="SPINS" name="SPINS">
-        
-        <input type="button" value="Submit" onclick="sendPromptData()">
-    </form>
-
-    <div id="loadingIndicator" style="display: none;">Loading...</div>
-    <div id="japaneseStory"></div>
-    <div id="englishSummary"></div>
-    <ul id="difficultWords"></ul>
-    <div id="imageContainer"></div>
+    <!-- ... HTML content ... -->
 
     <script>
         var socket = io();
@@ -58,25 +23,22 @@
     
         // Handle streamed data
         socket.on('streamed_response', function(data) {
+            // Process each received chunk of data
             try {
-                var content = JSON.parse(data.data); // Parsing each chunk of data
-    
-                // Append new content to the appropriate elements
-                if (content.japanese_story) {
-                    $("#japaneseStory").append("<p>" + content.japanese_story + "</p>");
-                }
-                if (content.english_summary) {
-                    $("#englishSummary").append("<p>" + content.english_summary + "</p>");
-                }
+                var content = data.data; // Directly using the data without JSON parsing
+
+                // Append the content directly to the DOM elements
+                $("#japaneseStory").append(content.japanese_story ? "<p>" + content.japanese_story + "</p>" : "");
+                $("#englishSummary").append(content.english_summary ? "<p>" + content.english_summary + "</p>" : "");
                 if (content.difficult_words) {
                     content.difficult_words.forEach(function(word) {
                         $("#difficultWords").append("<li>" + word.japanese + " - " + word.english + "</li>");
                     });
                 }
             } catch (e) {
-                console.error("Error parsing streamed response:", e);
+                console.error("Error handling streamed response:", e);
             }
-        });
+        })
     
         // Existing 'prompt_response' event handler
         socket.on('prompt_response', function(data) {
@@ -90,23 +52,5 @@
 </body>
 </html>
 
-socket.on('streamed_response', function(data) {
-    try {
-        var content = JSON.parse(data.data); // Parsing each chunk of data
 
-        // Append new content to the appropriate elements
-        if (content.japanese_story) {
-            $("#japaneseStory").append("<p>" + content.japanese_story + "</p>");
-        }
-        if (content.english_summary) {
-            $("#englishSummary").append("<p>" + content.english_summary + "</p>");
-        }
-        if (content.difficult_words) {
-            content.difficult_words.forEach(function(word) {
-                $("#difficultWords").append("<li>" + word.japanese + " - " + word.english + "</li>");
-            });
-        }
-    } catch (e) {
-        console.error("Error parsing streamed response:", e);
-    }
-});
+
