@@ -28,7 +28,16 @@
     <!-- ... (same as before) ... -->
 
     <form id="promptForm">
-        <!-- ... (same as before) ... -->
+        <label for="CMD">CMD:</label>
+        <input type="text" id="CMD" name="CMD">
+        
+        <label for="tag">Tag:</label>
+        <input type="text" id="tag" name="tag">
+        
+        <label for="SPINS">SPINS:</label>
+        <input type="text" id="SPINS" name="SPINS">
+        
+        <input type="button" value="Submit" onclick="sendPromptData()">
     </form>
 
     <div id="loadingIndicator" style="display: none;">Loading...</div>
@@ -41,7 +50,10 @@
         var socket = io();
 
         function sendPromptData() {
-            // ... (same as before) ...
+            var CMD = $("#CMD").val();
+            var tag = $("#tag").val();
+            var SPINS = $("#SPINS").val();
+            socket.emit('send_prompt', {CMD: CMD, tag: tag, SPINS: SPINS});
         }
 
         // Handle streamed data
@@ -63,7 +75,6 @@
 
         // Existing 'prompt_response' event handler
         socket.on('prompt_response', function(data) {
-            $("#loadingIndicator").hide();
             if (data.image_url) {
                 var imageHTML = `<img src="${data.image_url}" alt="Generated Image">`;
                 $("#imageContainer").html(imageHTML);
