@@ -58,18 +58,26 @@
 
         // Handle streamed data
         socket.on('streamed_response', function(data) {
-            var content = JSON.parse(data.data); // Assuming data is JSON-formatted
-            // Display content as it arrives
-            if (content.japanese_story) {
-                $("#japaneseStory").append("<p>" + content.japanese_story + "</p>");
-            }
-            if (content.english_summary) {
-                $("#englishSummary").append("<p>" + content.english_summary + "</p>");
-            }
-            if (content.difficult_words) {
-                content.difficult_words.forEach(function(word) {
-                    $("#difficultWords").append("<li>" + word.japanese + " - " + word.english + "</li>");
-                });
+            try {
+                // Attempt to parse the incoming data as JSON
+                var content = JSON.parse(data.data);
+
+                // Display content as it arrives
+                if (content.japanese_story) {
+                    $("#japaneseStory").append("<p>" + content.japanese_story + "</p>");
+                }
+                if (content.english_summary) {
+                    $("#englishSummary").append("<p>" + content.english_summary + "</p>");
+                }
+                if (content.difficult_words) {
+                    content.difficult_words.forEach(function(word) {
+                        $("#difficultWords").append("<li>" + word.japanese + " - " + word.english + "</li>");
+                    });
+                }
+            } catch (e) {
+                // Log an error and the data received to the console for debugging
+                console.error("Error parsing JSON data:", e);
+                console.log("Data received:", data.data);
             }
         });
 
