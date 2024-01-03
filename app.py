@@ -104,10 +104,14 @@ def handle_send_prompt(data):
     # Extract difficult words
     difficult_words = extract_difficult_words(story)
 
+    print("Story:", story)
+    difficult_words = extract_difficult_words(story)
+    print("Difficult Words:", difficult_words)
+
     # Add difficult words to the database
     for word in difficult_words:
         add_word_response = add_word(word['japanese'], word['english'])
-        print(add_word_response)  # You might want to handle this response in a user-friendly way
+        print("Adding Word:", word, "Response:", add_word_response)
 
     # Generate image with DALL-E using the English summary
     image_url = generate_image_with_dalle(english_summary)

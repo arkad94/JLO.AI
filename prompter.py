@@ -91,8 +91,11 @@ def extract_difficult_words(text):
                 'reading': match[2].strip(), 
                 'english': match[3].strip()
             })
-
+    print("Extracted Difficult Words:", formatted_difficult_words)
     return formatted_difficult_words
+
+    
+    
 
 
 
