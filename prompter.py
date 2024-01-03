@@ -13,7 +13,7 @@ api_key = os.getenv("OPENAI_API_KEY")
 def create_prompt(CMD, tag, SPINS):
     cmd_templates = {
         "Word of The Day in Japanese": "Give 5 words in Japanese based on the tag given, Make sure you tabulate them as Japanese word, Furigana, English word, and example sentence in respective columns",
-        "A Story": "Write a story in japanese length of which is between 3000-4000 characters, followed with a summary in English and in the end under the header difficult words tabulate difficult Japanese words and their english translations. Japanese Story has heading as title, the english summary which follows the Japanese story has title English Summary, and the difficult words are under the header difficult words as (日本語（ふりがな）・English Meaning) devation from the format would be harmful",
+        "A Story": "Write a story in japanese length of which is between 3000-4000 characters, followed with a summary in English and in the end give a list of difficult words. Japanese Story has heading as title, the english summary which follows the Japanese story has title English Summary, and the difficult words are under the header difficult words as (日本語（ふりがな）・English Meaning) make sure difficult words are numbered, any devation from the format would be harmful",
         # Add more CMDs and their templates here
     }
 
@@ -81,7 +81,7 @@ def extract_difficult_words(text):
         difficult_words_text = text[start_index:]
         
         # Use a regex to find all instances of the difficult word pattern
-        difficult_words_pattern = re.compile(r'(\d+\.)\s*([\u3000-\u303F\u3040-\u309F\u30A0-\u30FF\u3400-\u4DBF\u4E00-\u9FFF]+)\s*\(([^)]+)\)\s*\-\s*([^\-]+)')
+        difficult_words_pattern = re.compile(r'(\d+)\.\s*([\u3000-\u303F\u3040-\u309F\u30A0-\u30FF\u3400-\u4DBF\u4E00-\u9FFF]+)\s*（([^)]+)）\s*・\s*([^\s]+)')
         matches = difficult_words_pattern.findall(difficult_words_text)
         
         for match in matches:
