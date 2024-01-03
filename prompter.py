@@ -26,7 +26,7 @@ def create_prompt(CMD, tag, SPINS):
         instructions.append(f"SPINS: {SPINS.strip()}")
 
     instruction_str = ", ".join(instructions)
-    final_prompt = f"{prompt_template} based on the following instructions: {instruction_str}." if instructions else prompt_template
+    final_prompt = f"{prompt_template} based on the following Theme: {instruction_str}." if instructions else prompt_template
     return final_prompt, CMD in cmd_templates
     
 
