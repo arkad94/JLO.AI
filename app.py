@@ -95,11 +95,16 @@ def handle_send_prompt(data):
     tag = data['tag']
     SPINS = data['SPINS']
 
-    # Get the story and process it to extract different parts
+    # Get the story from OpenAI
     story = send_prompt_to_openai(CMD, tag, SPINS)
-    japanese_story, english_summary, difficult_words = process_text(story)
 
-        # Add difficult words to the database
+    # Process the story to extract Japanese story and English summary
+    japanese_story, english_summary = process_text(story)
+
+    # Extract difficult words
+    difficult_words = extract_difficult_words(story)
+
+    # Add difficult words to the database
     for word in difficult_words:
         add_word_response = add_word(word['japanese'], word['english'])
         print(add_word_response)  # You might want to handle this response in a user-friendly way
@@ -114,6 +119,7 @@ def handle_send_prompt(data):
         'difficult_words': difficult_words,
         'image_url': image_url
     })
+
 
 
 
