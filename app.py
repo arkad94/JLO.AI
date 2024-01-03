@@ -5,7 +5,7 @@ from flask import Flask, render_template, request, session, redirect, url_for, j
 from flask_socketio import SocketIO, emit
 from dbextension import db
 from db_operations import add_user, get_users, update_user, delete_user, add_word, get_words, update_word, delete_word
-from prompter import send_prompt_to_openai, generate_image_with_dalle, process_text
+from prompter import send_prompt_to_openai, generate_image_with_dalle, process_text, extract_difficult_words
 from models import  User, Word
 from authlib.integrations.flask_client import OAuth
 from dotenv import load_dotenv, find_dotenv
