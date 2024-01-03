@@ -99,6 +99,11 @@ def handle_send_prompt(data):
     story = send_prompt_to_openai(CMD, tag, SPINS)
     japanese_story, english_summary, difficult_words = process_text(story)
 
+        # Add difficult words to the database
+    for word in difficult_words:
+        add_word_response = add_word(word['japanese'], word['english'])
+        print(add_word_response)  # You might want to handle this response in a user-friendly way
+
     # Generate image with DALL-E using the English summary
     image_url = generate_image_with_dalle(english_summary)
 

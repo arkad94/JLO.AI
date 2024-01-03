@@ -60,7 +60,7 @@ def generate_image_with_dalle(story):
 
 
 def process_text(text):
-    # Regular expression patterns
+    # Regular expression patterns to extract Japanese and English text
     japanese_pattern = r'[\u3000-\u303F\u3040-\u309F\u30A0-\u30FF\u3400-\u4DBF\u4E00-\u9FFF\uF900-\uFAFF]+'
     english_pattern = r'[A-Za-z0-9\s,.;\'"-]+'
     
@@ -68,24 +68,31 @@ def process_text(text):
     japanese_story = ' '.join(re.findall(japanese_pattern, text))
     english_summary = ' '.join(re.findall(english_pattern, text))
 
-    # Find the difficult words section
-    difficult_words_section = re.search('Difficult Words(.*)', text, re.DOTALL)
+    return japanese_story, english_summary
 
+def extract_difficult_words(text):
     # Initialize an empty list to store formatted difficult words
     formatted_difficult_words = []
 
-    if difficult_words_section:
-        # Extract the difficult words from the section
-        difficult_words_lines = difficult_words_section.group(1).strip().split('\n')
-        for line in difficult_words_lines:
-            # Split the line using the middle dot as the delimiter
-            parts = line.split('・')
-            if len(parts) == 2:
-                japanese = parts[0].strip()
-                english = parts[1].strip()
-                formatted_difficult_words.append({'japanese': japanese, 'english': english})
+    # Find the difficult words section
+    start_index = text.find('Difficult Words')
+    if start_index != -1:
+        # Slice the text from the start of the difficult words section to the end
+        difficult_words_text = text[start_index:]
+        
+        # Use a regex to find all instances of the difficult word pattern
+        difficult_words_pattern = re.compile(r'(\d+\.)\s*([\u3000-\u303F\u3040-\u309F\u30A0-\u30FF\u3400-\u4DBF\u4E00-\u9FFF]+)\s*\(([^)]+)\)\s*\-\s*([^\-]+)')
+        matches = difficult_words_pattern.findall(difficult_words_text)
+        
+        for match in matches:
+            # Each 'match' is a tuple with the following structure: (number, Japanese word, reading, English translation)
+            formatted_difficult_words.append({
+                'japanese': match[1].strip(), 
+                'reading': match[2].strip(), 
+                'english': match[3].strip()
+            })
 
-    return japanese_story, english_summary, formatted_difficult_words
+    return formatted_difficult_words
 
 
 
@@ -114,16 +121,4 @@ def send_prompt_to_openai(CMD, tag, SPINS):
     return ""
 
 
-def extract_difficult_words(response):
-    # First, isolate the difficult words section
-    difficult_words_section = response.split('Difficult Words')[1] if 'Difficult Words' in response else ""
-    
-    difficult_words = []
-    # Now process each line within this section
-    for line in difficult_words_section.split('\n'):
-        if '・' in line:  # Correct delimiter for splitting
-            parts = line.strip().split('・')  # Split using the correct delimiter
-            if len(parts) == 2:
-                japanese, english = parts[0], parts[1]
-                difficult_words.append({'japanese': japanese.strip(), 'english': english.strip()})
-    return difficult_words
+

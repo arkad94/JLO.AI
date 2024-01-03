@@ -61,7 +61,13 @@ def add_word(japanese, english):
         # Check if the word already exists in the database
         existing_word = Word.query.filter_by(japanese=japanese).first()
         if existing_word:
-            return "Word already exists"
+            # Optionally update the English translation if it's different
+            if existing_word.english != english:
+                existing_word.english = english
+                db.session.commit()
+                return "Word updated successfully"
+            else:
+                return "Word already exists"
 
         # If the word doesn't exist, add it to the database
         new_word = Word(japanese=japanese, english=english)
@@ -69,8 +75,8 @@ def add_word(japanese, english):
         db.session.commit()
         return "Word added successfully"
     except SQLAlchemyError as e:
-        # Properly aligned 'except' block
-        return f"Error adding word: {e}"
+        db.session.rollback()
+        return f"Error adding word: {e}" 
 
 
 def get_words():
