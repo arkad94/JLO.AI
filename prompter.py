@@ -82,7 +82,7 @@ def extract_difficult_words(text):
         
         # Use a regex to find all instances of the difficult word pattern
         difficult_words_pattern = re.compile(
-    r'\n?(\d+)\.\s*([\u3000-\u303F\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]+)\s*（([^）]*)）?・([^・\n]+)'
+    r'\n?(\d+)\.\s*([\u3000-\u303F\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]+)\s*（([^）]*)）?\s*・\s*([^\n]+)'
 )
 
 
